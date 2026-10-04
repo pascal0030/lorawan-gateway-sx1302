@@ -49,6 +49,7 @@ There is no need to modify the downloaded file like the documentation [SX1302_Lo
 \-> The Docker Image does the required modification itself.
 ```bash
 docker run -d --restart always --privileged \
+--log-opt max-size=10m --log-opt max-file=3 \
 -v /opt/docker/lorawan-gateway/global_conf.json:/opt/docker/lorawan-gateway/global_conf.json:ro \
 ghcr.io/pascal0030/lorawan-gateway-sx1302:latest
 ```
@@ -68,11 +69,25 @@ DEBUG | Use this Flag to determine the EUI-Number.<br> Can be `1` or `0`. Defaul
 
 ```bash
 docker run -d --restart always --privileged \
+--log-opt max-size=10m --log-opt max-file=3 \
 -e SERVER_ADDRESS=eu1.cloud.thethings.network \
 -e SERVER_PORT_UP=1700 \
 -e SERVER_PORT_DOWN=1700 \
 ghcr.io/pascal0030/lorawan-gateway-sx1302:latest
 ```
+
+The `--log-opt` flags cap the container log at three 10 MB files.
+Log options can only be set when a container is created, so an existing container has to be recreated for the limit to take effect.
+
+> **Note:** These options require the `json-file` (default) or `local` log driver.
+> If your Docker daemon is configured for another driver such as `journald`, `docker run` fails with `unknown log opt`.
+> To apply the limit to every container instead, set it once in `/etc/docker/daemon.json` and restart the daemon:
+> ```json
+> {
+>   "log-driver": "json-file",
+>   "log-opts": { "max-size": "10m", "max-file": "3" }
+> }
+> ```
 
 If you have any issues running the docker image, please check if there is not already one insance running with `docker ps`.
 Otherwiese stop those containers.

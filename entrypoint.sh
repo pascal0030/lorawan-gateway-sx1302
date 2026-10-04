@@ -88,4 +88,7 @@ fi
 
 # Run the Lora Packet Forwarder
 cd ./packet_forwarder/
-./lora_pkt_fwd -c ./test_conf.json
+
+# exec replaces the shell so lora_pkt_fwd becomes PID 1 and receives the SIGTERM
+# sent by "docker stop", which lets it shut the concentrator down cleanly.
+exec ./lora_pkt_fwd -c ./test_conf.json
