@@ -82,12 +82,13 @@ Log options can only be set when a container is created, so an existing containe
 > **Note:** These options require the `json-file` (default) or `local` log driver.
 > If your Docker daemon is configured for another driver such as `journald`, `docker run` fails with `unknown log opt`.
 > To apply the limit to every container instead, set it once in `/etc/docker/daemon.json` and restart the daemon:
-> ```json
-> {
->   "log-driver": "json-file",
->   "log-opts": { "max-size": "10m", "max-file": "3" }
-> }
-> ```
+
+```json
+{
+  "log-driver": "json-file",
+  "log-opts": { "max-size": "10m", "max-file": "3" }
+}
+```
 
 If you have any issues running the docker image, please check if there is not already one insance running with `docker ps`.
 Otherwiese stop those containers.
