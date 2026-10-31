@@ -5,9 +5,9 @@ on:
       - created
   push:
     paths:
-      - '/**'
+      - '**'
       - '!**.md'
-      - '!.gitingore'
+      - '!.gitignore'
   workflow_dispatch:
 
 

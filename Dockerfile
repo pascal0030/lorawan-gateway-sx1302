@@ -14,11 +14,16 @@ LABEL \
     org.opencontainers.image.authors="Pasal0030"
 
 # Install required packages
+# wget and unzip are used by the raspberrypi5 stage below. They happen to be
+# present in the current base image, but that tag floats - install them so a
+# rebuild does not break when it changes.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     make \
     gcc \
     jq \
     git \
+    wget \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Raspberry Pi 5 installation

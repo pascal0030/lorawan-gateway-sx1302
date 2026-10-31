@@ -93,6 +93,52 @@ Log options can only be set when a container is created, so an existing containe
 If you have any issues running the docker image, please check if there is not already one insance running with `docker ps`.
 Otherwiese stop those containers.
 
+## Keeping the gateway alive
+
+Two different failures can leave a gateway that looks healthy but forwards nothing.
+The image handles the first; the second needs a watchdog on the host.
+
+### The server link dies
+The packet forwarder resolves `server_address` once at startup and keeps both UDP
+sockets pointed at that one IP for the life of the process. If the address moves or
+the path dies, uplinks vanish into nothing and the process never exits, so
+`--restart always` never fires.
+
+The entrypoint now sets `autoquit_threshold` to `10`, so after ten unacknowledged
+keepalives (about 100 seconds) the forwarder quits and Docker restarts it with a
+fresh DNS lookup. This only self-heals under `--restart always`; the forwarder exits
+with status 0, so `--restart on-failure` would not restart it.
+
+### The concentrator goes deaf
+Harder to spot: the server link stays at 100% acknowledged while the SX1302 stops
+receiving. The RF front-end calibration is performed once inside `lgw_start()`, and
+a supply brown-out can invalidate it while the digital side carries on happily.
+`autoquit_threshold` cannot catch this, and neither can a Docker `HEALTHCHECK` - the
+stat reports go to stdout, not to a file the container can read back, and Docker does
+not restart a container merely for being unhealthy.
+
+> **Check your power supply first.** A Raspberry Pi plus this HAT is a marginal load.
+> Run `vcgencmd get_throttled`; anything other than `0x0` means the board is browning
+> out, and no amount of software will fix a deaf radio.
+
+[`watchdog/`](watchdog/) contains a script and systemd units that watch the uplink
+count from outside the container and restart it when nothing has been heard:
+
+```bash
+sudo cp watchdog/lorawan-gateway-watchdog.sh /opt/docker/lorawan-gateway/
+sudo cp watchdog/lorawan-gateway-watchdog.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now lorawan-gateway-watchdog.timer
+```
+
+Defaults restart the container if fewer than one uplink arrives in four hours. Tune
+with `WINDOW`, `MIN_UPLINKS` and `MIN_REPORTS` in the `.service` file - shorten the
+window to notice sooner, but keep `MIN_UPLINKS` below the quietest stretch you
+expect, or a single stray packet from a neighbouring network will mask a dead
+receiver. Check it with `systemctl status lorawan-gateway-watchdog` and
+`journalctl -u lorawan-gateway-watchdog`.
+
+
 ## Build/Modify the Lorawan Gateway Image
 If you want to build and modify this Docker Image, follow the steps below.
 

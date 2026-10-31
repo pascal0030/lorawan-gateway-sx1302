@@ -1,0 +1,11 @@
+[Unit]
+Description=Restart the LoRaWAN gateway container if the concentrator stops receiving
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/docker/lorawan-gateway/lorawan-gateway-watchdog.sh
+# Tune without editing the script:
+# Environment=WINDOW=4h
+# Environment=MIN_REPORTS=400
